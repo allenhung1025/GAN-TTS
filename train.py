@@ -14,7 +14,7 @@ from tensorboardX import SummaryWriter
 from utils.optimizer import Optimizer
 from utils.audio import hop_length
 from utils.loss import MultiResolutionSTFTLoss
-
+import pdb; pdb.set_trace()
 def create_model(args):
 
     generator = Generator(args.local_condition_dim, args.z_dim)
