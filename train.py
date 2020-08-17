@@ -14,7 +14,6 @@ from tensorboardX import SummaryWriter
 from utils.optimizer import Optimizer
 from utils.audio import hop_length
 from utils.loss import MultiResolutionSTFTLoss
-import pdb; pdb.set_trace()
 def create_model(args):
 
     generator = Generator(args.local_condition_dim, args.z_dim)
@@ -84,8 +83,7 @@ def train(args):
 
     print(generator)
     print(discriminator)
-
-    num_gpu = torch.cuda.device_count() if args.use_cuda else 1
+    num_gpu = 2#torch.cuda.device_count() if args.use_cuda else 1
 
     global_step = 0
 
@@ -114,27 +112,24 @@ def train(args):
     criterion = nn.MSELoss().to(device)
 
     for epoch in range(args.epochs):
-
-       collate = CustomerCollate(
+        collate=CustomerCollate(
            upsample_factor=hop_length,
            condition_window=args.condition_window,
            local_condition=True,
            global_condition=False)
-
-       train_data_loader = DataLoader(train_dataset, collate_fn=collate,
+       
+        train_data_loader = DataLoader(train_dataset, collate_fn=collate,
                batch_size=args.batch_size, num_workers=args.num_workers,
                shuffle=True, pin_memory=True)
 
        #train one epoch
-       for batch, (samples, conditions) in enumerate(train_data_loader):
-
+        for batch, (samples, conditions) in enumerate(train_data_loader):
             start = time.time()
             batch_size = int(conditions.shape[0] // num_gpu * num_gpu)
 
             samples = samples[:batch_size, :].to(device)
             conditions = conditions[:batch_size, :, :].to(device)
             z = torch.randn(batch_size, args.z_dim).to(device)
-
             losses = {}
 
             if num_gpu > 1:
@@ -180,9 +175,9 @@ def train(args):
             sc_loss, mag_loss = stft_criterion(g_outputs.squeeze(1), samples.squeeze(1))
 
             if global_step > args.discriminator_train_start_steps:
-               g_loss = adv_loss * args.lamda_adv + sc_loss + mag_loss
+                g_loss = adv_loss * args.lamda_adv + sc_loss + mag_loss
             else:
-               g_loss = sc_loss + mag_loss
+                g_loss = sc_loss + mag_loss
 
             losses['adv_loss'] = adv_loss.item()
             losses['sc_loss'] = sc_loss
